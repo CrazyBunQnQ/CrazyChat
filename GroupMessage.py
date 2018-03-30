@@ -315,7 +315,7 @@ class web_weixin(object):
     def get_db_contact(self):
         db_connect=pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
         cursor = db_connect.cursor()
-        sql = "SELECT t.RemarkName FROM Tag t"
+        sql = "SELECT t.RemarkName FROM Contact t"
         cursor.execute(sql)
         contact = []
         result = cursor.fetchall()
@@ -328,32 +328,17 @@ class web_weixin(object):
     def update_db_contact(self, ct):
         db_connect=pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
         cursor = db_connect.cursor()
-        sql1 = "INSERT INTO Contact (Uin, NickName, HeadImgUrl, ContactFlag, MemberCount, MemberList, RemarkName, HideInputBarFlag, Sex, Signature, VerifyFlag, OwnerUin, PYInitial, PYQuanPin, RemarkPYInitial, RemarkPYQuanPin, StarFriend, AppAccountFlag, Statues, AttrStatus, Province, City, Alias, SnsFlag, UniFriend, DisplayName, ChatRoomId, KeyWord, EncryChatRoomId, IsOwner) VALUES ('" + str(ct['Uin']) + "', '" + ct[
-            'NickName'].replace("'", "\\'") + "', '" + ct['HeadImgUrl'] + "', '" + str(ct['ContactFlag']) + "', '" + str(
-            ct['MemberCount']) + "', '[]" + "', '" + ct['RemarkName'] + "', '" + str(
-            ct['HideInputBarFlag']) + "', '" + str(ct['Sex']) + "', '" + ct['Signature'].replace("'", "\\'") + "', '" + str(
-            ct['VerifyFlag']) + "', '" + str(ct['OwnerUin']) + "', '" + ct['PYInitial'] + "', '" + ct[
-                  'PYQuanPin'] + "', '" + ct['RemarkPYInitial'] + "', '" + ct['RemarkPYQuanPin'] + "', '" + str(
-            ct['StarFriend']) + "', '" + str(ct['AppAccountFlag']) + "', '" + str(ct['Statues']) + "', '" + str(
-            ct['AttrStatus']) + "', '" + ct['Province'] + "', '" + ct['City'] + "', '" + ct['Alias'] + "', '" + str(
-            ct['SnsFlag']) + "', '" + str(ct['UniFriend']) + "', '" + ct['DisplayName'] + "', '" + str(
-            ct['ChatRoomId']) + "', '" + ct['KeyWord'] + "', '" + ct['EncryChatRoomId'] + "', '" + str(
-            ct['IsOwner']) + "')"
-        sql2 = "INSERT INTO Tag (NickName, RemarkName, Sex, Province, City, Alias, IsOwner) VALUES ('" + ct[
+        sql = "INSERT INTO Contact (NickName, RemarkName, Sex, Province, City, Alias, IsOwner) VALUES ('" + ct[
             'NickName'].replace("'", "\\'") + "', '" + ct['RemarkName'] + "', '" + str(ct['Sex']) + "', '" + ct['Province'] + "', '" + ct[
                    'City'] + "', '" + ct['Alias'] + "', '" + str(ct['IsOwner']) + "')"
         try:
-            cursor.execute(sql1)
-            cursor.execute(sql2)
-            # print("更新标签表 id")
-            # cursor.execute("UPDATE Contact c, Tag t SET t.ContactId = c.ID WHERE c.RemarkName = t.RemarkName")
+            cursor.execute(sql)
             db_connect.commit()
             print("添加联系人 " + ct['RemarkName'] + " 成功")
         except:
             db_connect.rollback()
             print("添加联系人 " + ct['RemarkName'] + " 失败，回滚数据：")
-            print("添加联系人：" + sql1)
-            print("添加联系人标签：" + sql2)
+            print("添加联系人：" + sql)
         db_connect.close()
 
     # 获取联系人
@@ -639,7 +624,7 @@ class web_weixin(object):
             if contact['RemarkName'] in self.DBContact:
             # Test
             # if contact['RemarkName'] == '包子小号':
-                cursor.execute("SELECT t.RemarkName, t.RealNickName FROM Tag t WHERE t.RemarkName = '" + contact['RemarkName'] + "'")
+                cursor.execute("SELECT t.RemarkName, t.RealNickName FROM Contact t WHERE t.RemarkName = '" + contact['RemarkName'] + "'")
                 row = cursor.fetchone()
                 remark_name = row[0]
                 real_name = row[1]
