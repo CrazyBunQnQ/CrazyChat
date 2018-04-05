@@ -11,8 +11,8 @@ CREATE TABLE Contact
   COMMENT '称呼',
   Sex          INT(1) DEFAULT '0' NOT NULL
   COMMENT '账号性别',
-  RealSex      INT(1)             NULL
-  COMMENT '真实性别',
+  Country      VARCHAR(100)       NULL
+  COMMENT '所在国家',
   Province     VARCHAR(20)        NULL
   COMMENT '所在省份',
   City         VARCHAR(20)        NULL
