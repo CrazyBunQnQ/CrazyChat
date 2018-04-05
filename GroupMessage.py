@@ -95,7 +95,7 @@ class web_weixin(object):
         self.synckey = ''
         self.SyncKey = []
         self.User = []
-        self.DBContact = [] # 数据库中的联系人
+        self.DBContact = []  # 数据库中的联系人
         self.MemberList = []
         self.ContactList = []  # 好友
         self.GroupList = []  # 群
@@ -108,6 +108,7 @@ class web_weixin(object):
         self.interactive = False
         self.autoOpen = False
         self.groupSend = True
+        self.holiday = '清明节'
         self.saveFolder = os.path.join(os.getcwd(), 'saved')
         self.saveSubFolders = {'webwxgeticon': 'icons', 'webwxgetheadimg': 'headimgs', 'webwxgetmsgimg': 'msgimgs',
                                'webwxgetvideo': 'videos', 'webwxgetvoice': 'voices', '_showQRCodeImg': 'qrcodes'}
@@ -312,10 +313,14 @@ class web_weixin(object):
         return dic['BaseResponse']['Ret'] == 0
 
     # 获取数据库联系人
-    def get_db_contact(self):
-        db_connect=pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
+    def get_db_contact(self, part):
+        db_connect = pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
         cursor = db_connect.cursor()
         sql = "SELECT t.RemarkName FROM Contact t"
+        if part:
+            # 条件
+            sql = "SELECT t.RemarkName FROM Contact t, Holiday h WHERE (t.Country = h.Country AND h.Name = '" + self.holiday + "') OR t.Country IS NULL ORDER BY t.RemarkName"
+            print("sql: " + sql)
         cursor.execute(sql)
         contact = []
         result = cursor.fetchall()
@@ -326,11 +331,12 @@ class web_weixin(object):
 
     # 添加联系人到数据库
     def update_db_contact(self, ct):
-        db_connect=pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
+        db_connect = pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
         cursor = db_connect.cursor()
         sql = "INSERT INTO Contact (NickName, RemarkName, Sex, Province, City, Alias, IsOwner) VALUES ('" + ct[
-            'NickName'].replace("'", "\\'") + "', '" + ct['RemarkName'] + "', '" + str(ct['Sex']) + "', '" + ct['Province'] + "', '" + ct[
-                   'City'] + "', '" + ct['Alias'] + "', '" + str(ct['IsOwner']) + "')"
+            'NickName'].replace("'", "\\'") + "', '" + ct['RemarkName'] + "', '" + str(ct['Sex']) + "', '" + ct[
+                  'Province'] + "', '" + ct[
+                  'City'] + "', '" + ct['Alias'] + "', '" + str(ct['IsOwner']) + "')"
         try:
             cursor.execute(sql)
             db_connect.commit()
@@ -343,7 +349,7 @@ class web_weixin(object):
 
     # 获取联系人
     def webwx_get_contact(self):
-        self.DBContact = self.get_db_contact()
+        self.DBContact = self.get_db_contact(0)
         special_users = self.SpecialUsers
         url = self.base_uri + '/webwxgetcontact?pass_ticket=%s&skey=%s&r=%s' % (
             self.pass_ticket, self.skey, int(time.time()))
@@ -371,7 +377,7 @@ class web_weixin(object):
             elif contact['UserName'] == self.User['UserName']:  # 自己
                 contact_list.remove(contact)
         self.ContactList = contact_list
-        self.DBContact = self.get_db_contact()
+        self.DBContact = self.get_db_contact(1)
 
         return True
 
@@ -403,7 +409,7 @@ class web_weixin(object):
         url = self.base_uri + \
               '/webwxsendmsg?pass_ticket=%s' % (self.pass_ticket)
         client_msg_id = str(int(time.time() * 1000)) + \
-                      str(random.random())[:5].replace('.', '')
+                        str(random.random())[:5].replace('.', '')
         params = {
             'BaseRequest': self.BaseRequest,
             'Msg': {
@@ -499,7 +505,7 @@ class web_weixin(object):
     def webwx_send_msg_img(self, user_id, media_id):
         url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendmsgimg?fun=async&f=json&pass_ticket=%s' % self.pass_ticket
         client_msg_id = str(int(time.time() * 1000)) + \
-                      str(random.random())[:5].replace('.', '')
+                        str(random.random())[:5].replace('.', '')
         data_json = {
             "BaseRequest": self.BaseRequest,
             "Msg": {
@@ -520,7 +526,7 @@ class web_weixin(object):
     def webwx_send_msg_emotion(self, user_id, media_id):
         url = 'https://wx2.qq.com/cgi-bin/mmwebwx-bin/webwxsendemoticon?fun=sys&f=json&pass_ticket=%s' % self.pass_ticket
         client_msg_id = str(int(time.time() * 1000)) + \
-                      str(random.random())[:5].replace('.', '')
+                        str(random.random())[:5].replace('.', '')
         data_json = {
             "BaseRequest": self.BaseRequest,
             "Msg": {
@@ -614,25 +620,31 @@ class web_weixin(object):
         self.webwx_send_msg_emotion(user_id, media_id)
 
     def group_send_msg(self):
-        db_connect=pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
+        db_connect = pymysql.connect(host="localhost", user="root", passwd="toor", db="CrazyChat", charset="utf8")
         cursor = db_connect.cursor()
         # TODO 获取祝福语句
 
         for contact in self.ContactList:
+            print(contact['RemarkName'])
             # TODO 随机一句
-            str = "hi~"
+            str1 = ""
+            str2 = "~清明节快乐！"
             if contact['RemarkName'] in self.DBContact:
             # Test
             # if contact['RemarkName'] == '包子小号':
-                cursor.execute("SELECT t.RemarkName, t.RealNickName FROM Contact t WHERE t.RemarkName = '" + contact['RemarkName'] + "'")
+                cursor.execute("SELECT t.RemarkName, t.RealNickName FROM Contact t WHERE t.RemarkName = '" + contact[
+                    'RemarkName'] + "'")
                 row = cursor.fetchone()
                 remark_name = row[0]
                 real_name = row[1]
                 if real_name != '':
                 # Test
-                # if realName == '':
-                    self.webwx_send_msg(str + real_name, contact['UserName'])
-                    print("发送消息给 " + contact['RemarkName'] + ": " + remark_name)
+                # if real_name == '':
+                    msg = str1 + real_name + str2
+                    print(msg)
+                    # self.webwx_send_msg(str1 + real_name + str2, contact['UserName'])
+                    time.sleep(2)
+                    # print("发送消息给 " + contact['RemarkName'] + ": " + remark_name)
 
         db_connect.close()
         print("[*] 群发消息已完成")
@@ -811,6 +823,7 @@ class web_weixin(object):
             logging.error('generic exception: ' + traceback.format_exc())
 
         return ''
+
 
 class UnicodeStreamFilter:
 
